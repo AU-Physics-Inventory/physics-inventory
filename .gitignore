@@ -1,0 +1,6 @@
+# Database
+database/mongodb-ca-certificate.crt
+database/mongodb.properties
+database/mongodb-users.properties
+database/vpc-mongodb.properties
+database/vpc-mongodb-ca-certificate.crt
