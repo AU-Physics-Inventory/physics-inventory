@@ -1,3 +1,4 @@
 # Database
 database/mongodb.properties
 database/mariadb.properties
+ssl/*
