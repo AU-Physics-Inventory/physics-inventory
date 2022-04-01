@@ -4,7 +4,7 @@ db.createCollection("assets", {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            required: ["location", "name", "missing", "manuals", "mfrInfo", "purchases", "maintenance"],
+            required: ["location", "name", "missing", "manuals", "mfrInfo", "purchases", "maintenance", "isConsumable", "images"],
             properties: {
                 name: {
                     bsonType: "string",
@@ -103,7 +103,7 @@ db.createCollection("assets", {
                             },
                             receipt: {
                                 bsonType: "string",
-                                description: "receipt url"
+                                description: "key for receipt in S3 bucket"
                             }
                         }
                     }
@@ -123,11 +123,11 @@ db.createCollection("assets", {
                         }
                     }
                 },
-                missingReports: {
+                accountabilityReports: {
                     bsonType: "object",
-                    description: "missing asset reports",
+                    description: "reports of missing and recovered assets",
                     properties: {
-                        reports: {
+                        missingReports: {
                             bsonType: "array",
                             description: "array of missing asset reports",
                             items: {
@@ -160,52 +160,52 @@ db.createCollection("assets", {
                                     },
                                 }
                             },
-                            recoveryReports: {
-                                bsonType: "array",
-                                description: "details on the recovery of the missing quantities",
-                                items: {
-                                    bsonType: "object",
-                                    description: "recovery report",
-                                    properties: {
-                                        quantity: {
-                                            bsonType: "object",
-                                            description: "details on the quantity recovered; required",
-                                            required: ["amount", "unit"],
-                                            properties: {
-                                                amount: {
-                                                    bsonType: "double",
-                                                    description: "amount recovered; required"
-                                                },
-                                                unit: {
-                                                    bsonType: "string",
-                                                    description: "units of the amount recovered; required"
-                                                }
+                        },
+                        recoveryReports: {
+                            bsonType: "array",
+                            description: "details on the recovery of the missing quantities",
+                            items: {
+                                bsonType: "object",
+                                description: "recovery report",
+                                properties: {
+                                    quantity: {
+                                        bsonType: "object",
+                                        description: "details on the quantity recovered; required",
+                                        required: ["amount", "unit"],
+                                        properties: {
+                                            amount: {
+                                                bsonType: "double",
+                                                description: "amount recovered; required"
+                                            },
+                                            unit: {
+                                                bsonType: "string",
+                                                description: "units of the amount recovered; required"
                                             }
-                                        },
-                                        date: {
-                                            bsonType: "date",
-                                            description: "date reported missing; required"
-                                        },
-                                        reportedBy: {
-                                            bsonType: "string",
-                                            description: "name of person who made the report; required"
                                         }
+                                    },
+                                    date: {
+                                        bsonType: "date",
+                                        description: "date reported as recovered; required"
+                                    },
+                                    reportedBy: {
+                                        bsonType: "string",
+                                        description: "name of person who made the report; required"
                                     }
                                 }
-                            },
-                            quantity: {
-                                bsonType: "object",
-                                description: "details on the total quantity missing; required",
-                                required: ["amount", "unit"],
-                                properties: {
-                                    amount: {
-                                        bsonType: "double",
-                                        description: "total amount missing; required"
-                                    },
-                                    unit: {
-                                        bsonType: "string",
-                                        description: "units of the total amount missing; required"
-                                    }
+                            }
+                        },
+                        quantity: {
+                            bsonType: "object",
+                            description: "details on the total quantity missing; required",
+                            required: ["amount", "unit"],
+                            properties: {
+                                amount: {
+                                    bsonType: "double",
+                                    description: "total amount missing; required"
+                                },
+                                unit: {
+                                    bsonType: "string",
+                                    description: "units of the total amount missing; required"
                                 }
                             }
                         }
@@ -219,42 +219,42 @@ db.createCollection("assets", {
                     bsonType: "string",
                     description: "notes entered by a user"
                 },
-                maintenance: {
+                maintenanceRecord: {
                     bsonType: "object",
                     description: "describes the maintenance status of an asset; required",
-                    required: ["status", "calibration"],
+                    required: ["currentStatus", "history", "calibration"],
                     properties: {
-                        status: {
+                        currentStatus: {
                             bsonType: "object",
                             description: "status details",
-                            required: ["current", "effectiveDate"],
+                            required: ["status", "effectiveDate"],
                             properties: {
-                                current: {
+                               status: {
                                     enum: ["W", "C", "R", "T", "U"],
                                     description: "current status code"
                                 },
                                 effectiveDate: {
                                     bsonType: "date",
                                     description: "date of current status"
-                                },
-                                history: {
-                                    bsonType: "array",
-                                    description: "historical status changes",
-                                    items: {
-                                        bsonType: "object",
-                                        description: "historical status",
-                                        required: ["status", "date"],
-                                        properties: {
-                                            status: {
-                                                enum: ["W", "C", "R", "T", "U"],
-                                                description: "status code"
-                                            },
-                                            effectiveDate: {
-                                                bsonType: "date",
-                                                description: "date of status"
-                                            },
-                                        }
-                                    }
+                                }
+                            }
+                        },
+                        history: {
+                            bsonType: "array",
+                            description: "historical status changes",
+                            items: {
+                                bsonType: "object",
+                                description: "historical status",
+                                required: ["status", "effectiveDate"],
+                                properties: {
+                                    status: {
+                                        enum: ["W", "C", "R", "T", "U"],
+                                        description: "status code"
+                                    },
+                                    effectiveDate: {
+                                        bsonType: "date",
+                                        description: "date of status"
+                                    },
                                 }
                             }
                         },
@@ -291,8 +291,16 @@ db.createCollection("assets", {
                     }
                 },
                 isConsumable: {
-                    bsonType: "boolean",
+                    bsonType: "bool",
                     description: "specifies whether the asset is consumable"
+                },
+                images: {
+                    bsonType: "array",
+                    description: "array of images of the asset",
+                    items: {
+                        bsonType: "string",
+                        description: "key for image in S3 bucket"
+                    }
                 }
             }
         }
@@ -311,12 +319,12 @@ db.createCollection("manuals", {
                     description: "number that ties common assets together; formerly record_locator; required"
                 },
                 hardcopy: {
-                    bsonType: "boolean",
+                    bsonType: "bool",
                     description: "specifies whether a hardcopy asset is available; required"
                 },
                 softcopy: {
                     bsonType: "string",
-                    description: "url of the softcopy manual if available"
+                    description: "key of the softcopy manual in S3 bucket if available"
                 }
             },
             additionalProperties: false
@@ -427,8 +435,70 @@ db.createCollection("sets", {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            description: "sets composed of assets",
+            description: "sets composed of assets and groups",
+            required: ["name", "assets", "identityNos", "groups"],
+            properties: {
+                name: {
+                    bsonType: "string",
+                    description: "set name; required"
+                },
+                assets: {
+                    bsonType: "array",
+                    description: "an array of assets pertaining to this set",
+                    items: {
+                        bsonType: "int",
+                        description: "objectID of asset belonging to set"
+                    }
+                },
+                identityNos: {
+                    bsonType: "array",
+                    description: "an array of identityNos relating assets to this set",
+                    items: {
+                        bsonType: "int",
+                        description: "identityNo"
+                    }
+                },
+                groups: {
+                    bsonType: "array",
+                    description: "an array of groups pertaining to this set",
+                    items: {
+                        bsonType: "int",
+                        description: "objectID of groups belonging to set"
+                    }
+                }
+            }
+        }
+    }
+})
 
+db.createCollection("groups", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            description: "groups composed of assets",
+            required: ["name", "assets", "identityNos"],
+            properties: {
+                name: {
+                    bsonType: "string",
+                    description: "set name; required"
+                },
+                assets: {
+                    bsonType: "array",
+                    description: "an array of assets pertaining to this set",
+                    items: {
+                        bsonType: "int",
+                        description: "objectID of asset belonging to set"
+                    }
+                },
+                identityNos: {
+                    bsonType: "array",
+                    description: "an array of identityNos relating assets to this set",
+                    items: {
+                        bsonType: "int",
+                        description: "identityNo"
+                    }
+                }
+            }
         }
     }
 })
@@ -466,7 +536,7 @@ db.createCollection("irregularLocations", {
                     required: ["approved", "by", "date"],
                     properties: {
                         approved: {
-                            bsonType: "boolean",
+                            bsonType: "bool",
                             description: "specifies whether the location was approved or not"
                         },
                         by: {
@@ -483,4 +553,3 @@ db.createCollection("irregularLocations", {
         }
     }
 })
-

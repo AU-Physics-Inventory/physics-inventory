@@ -17,9 +17,9 @@
 
 ### Tasks (ordered by priority)
 
-1. Design database schemas
-1. Migrate inventory data from MySQL to MongoDB
-1. Implement REST API using Spring and Kotlin
+1. Design database schemas [x]
+1. Migrate inventory data from MySQL to MongoDB [x]
+1. Implement GraphQL API using Spring and Kotlin
 1. Implement Web application using React.js
 1. Implement iOS application using Swift
 1. Implement Android application using Kotlin 
