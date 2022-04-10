@@ -3,9 +3,7 @@
 
 ### Stack
 
-- Database
-    - MariaDB for user authentication
-    - MongoDB for inventory data
+- Database: MongoDB
 - File Server: DigitalOcean Spaces
 - Front-end
     - Web: React.js
